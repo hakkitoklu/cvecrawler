@@ -2,11 +2,8 @@
 from bs4 import BeautifulSoup
 import requests
 import pandas as pd
-import csv
-import mysql
-from mysql.connector import Error
 from database import db
-import sys
+from openpyxl.workbook import workbook
 #Score değerlerine göre sınıflandırılmış sayfaların linkleri
 urls = ["https://www.cvedetails.com/vulnerability-list.php?vendor_id=0&product_id=0&version_id=0&page=1&hasexp=0&opdos=0&opec=0&opov=0&opcsrf=0&opgpriv=0&opsqli=0&opxss=0&opdirt=0&opmemc=0&ophttprs=0&opbyp=0&opfileinc=0&opginf=0&cvssscoremin=9&cvssscoremax=10&year=0&month=0&cweid=0&order=1&trc=16185&sha=c560d509f935c26128bfb13d2f2dadfcea62215b",
 "https://www.cvedetails.com/vulnerability-list.php?vendor_id=0&product_id=0&version_id=0&page=1&hasexp=0&opdos=0&opec=0&opov=0&opcsrf=0&opgpriv=0&opsqli=0&opxss=0&opdirt=0&opmemc=0&ophttprs=0&opbyp=0&opfileinc=0&opginf=0&cvssscoremin=8&cvssscoremax=8.99&year=0&month=0&cweid=0&order=1&trc=553&sha=47211ec39e8a5bfc696c510450016af4d6c6f60d",
@@ -35,16 +32,18 @@ def craw(url,pn):
                 list.append(a)
         except Error as e:
             print("Error : {}".format(e))
+        return list
 #Tabloda her girdi için 16 değer bulunuyor.Listeye ise her değeri 0 indisinden başlayarak sırayla her değeri
 # yeni indise yazarak aldığından döngü aşağıdaki gibi yazılmıştır.Her 16 değerde bir diğer girdiye geçiyor.
 
-        #SQL INSERT DÖNGÜSÜ
-        for i in range(0, len(list), 16):
+#SQL INSERT DÖNGÜSÜ
+
+        """for i in range(0, len(list), 16):
             try:
                 db.insert(str(list[i + 1]), str(list[i + 2]), str(list[i + 4]), str(list[i + 5]),
                           str(list[i + 6]), str(list[i + 7]), str(list[i + 9]), str(list[i + 15]))
             except Error as e:
-                print("DÖNGÜ PROBLEMİ : {}".format(e))
+                print("DÖNGÜ PROBLEMİ : {}".format(e))"""
 
 #En son sayfa numarasını bulmak için
 def find_last_pn(url):
@@ -58,7 +57,15 @@ def find_last_pn(url):
         page_list.append(a)
     lpn=int(page_list[-1])
     return lpn
+db=db()
+s_name=input("Aranan zafiyet başlığı :")   #Example : Linaro
+s_version=input("Aranan zafiyet versiyonu :") #Example : 3.3.0
+
+
+db_data=db.db_get(str(s_name),str(s_version))
+#Alınan verileri tablo halinde excel dosyasına aktarma
+df=pd.DataFrame(db_data)
+excel=df.to_excel(r'path',index=None,header=True)
 
 for url in urls:
     craw(url,find_last_pn(url))
-sys.exit()
